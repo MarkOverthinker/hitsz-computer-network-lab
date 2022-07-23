@@ -76,7 +76,7 @@ static void arp_req(uint8_t *target_ip)
     uint8_t bmac[6] = BROAD_MAC;
     arp_pkt_t pkt = arp_init_pkt;
     memcpy(pkt.target_ip, target_ip, 4);
-    pkt.opcode = 1;
+    pkt.opcode = ARP_REQUEST;
     memcpy(txbuf.data+NET_MAC_LEN*2+2, &pkt, sizeof(arp_pkt_t));
     ethernet_out(&txbuf, bmac, NET_PROTOCOL_ARP);
 }
@@ -101,7 +101,12 @@ static void arp_req(uint8_t *target_ip)
 void arp_in(buf_t *buf)
 {
     // TODO
-    
+    buf_remove_header(buf, NET_MAC_LEN*2+2);
+    arp_pkt_t *arp = buf->data;
+    if (arp->hw_len != NET_MAC_LEN || arp->hw_type != swap16(ARP_HW_ETHER) || arp->pro_type != swap16(NET_PROTOCOL_IP) || arp->pro_len != NET_IP_LEN || (arp->opcode != ARP_REQUEST && arp->opcode != ARP_REPLY)) {
+        return ;
+    }
+    arp_update()
 }
 
 /**
@@ -118,7 +123,15 @@ void arp_in(buf_t *buf)
 void arp_out(buf_t *buf, uint8_t *ip, net_protocol_t protocol)
 {
     // TODO
-
+    for (int i = 0; i < ARP_MAX_ENTRY; ++i) {
+        if (arp_table[i].state == ARP_VALID && memcmp(arp_table[i].ip, ip, 4) == 0) {
+            ethernet_out(buf, arp_table[i].mac, protocol);
+        }
+    }
+    arp_buf.buf = *buf;
+    arp_buf.valid = 1;
+    arp_buf.protocol = protocol;
+    arp_req(ip);
 }
 
 /**
