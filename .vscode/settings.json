@@ -1,3 +1,11 @@
 {
-    "C_Cpp.errorSquiggles": "Disabled"
+    "C_Cpp.errorSquiggles": "Disabled",
+    "files.associations": {
+        "string.h": "c",
+        "config.h": "c",
+        "ethernet.h": "c",
+        "utils.h": "c",
+        "arp.h": "c",
+        "net.h": "c"
+    }
 }

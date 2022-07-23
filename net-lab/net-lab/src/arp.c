@@ -45,7 +45,7 @@ arp_buf_t arp_buf;
 void arp_update(uint8_t *ip, uint8_t *mac, arp_state_t state)
 {
     // TODO
-
+    
 }
 
 /**
@@ -73,7 +73,12 @@ static uint8_t *arp_lookup(uint8_t *ip)
 static void arp_req(uint8_t *target_ip)
 {
     // TODO
-
+    uint8_t bmac[6] = BROAD_MAC;
+    arp_pkt_t pkt = arp_init_pkt;
+    pkt.target_ip = *target_ip;
+    pkt.opcode = 1;
+    memcpy(txbuf.data+NET_MAC_LEN*2+2, &pkt, sizeof(arp_pkt_t));
+    ethernet_out(txbuf, bmac, NET_PROTOCOL_ARP);
 }
 
 /**
