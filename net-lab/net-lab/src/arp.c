@@ -75,10 +75,10 @@ static void arp_req(uint8_t *target_ip)
     // TODO
     uint8_t bmac[6] = BROAD_MAC;
     arp_pkt_t pkt = arp_init_pkt;
-    pkt.target_ip = *target_ip;
+    memcpy(pkt.target_ip, target_ip, 4);
     pkt.opcode = 1;
     memcpy(txbuf.data+NET_MAC_LEN*2+2, &pkt, sizeof(arp_pkt_t));
-    ethernet_out(txbuf, bmac, NET_PROTOCOL_ARP);
+    ethernet_out(&txbuf, bmac, NET_PROTOCOL_ARP);
 }
 
 /**
