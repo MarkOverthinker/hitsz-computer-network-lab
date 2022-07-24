@@ -10,12 +10,10 @@
     {                                      \
         0x11, 0x22, 0x33, 0x44, 0x55, 0x66 \
     }                     //自定义网卡mac地址
-
-#define BROAD_MAC   \
-{                                   \
-    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF  \
-}               
-
+#define BROAD_MAC                      \
+    {                                      \
+        0x11, 0x22, 0x33, 0x44, 0x55, 0x66 \
+    }              
 #define ETHERNET_MTU 1500 //以太网最大传输单元
 
 #define ARP_MAX_ENTRY 16       //arp表最大长度
