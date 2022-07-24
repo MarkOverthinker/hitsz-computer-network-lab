@@ -45,7 +45,31 @@ arp_buf_t arp_buf;
 void arp_update(uint8_t *ip, uint8_t *mac, arp_state_t state)
 {
     // TODO
-    
+    for (int i = 0; i < ARP_MAX_ENTRY; ++i) {
+        arp_table[i].timeout++;
+        if (arp_table[i].timeout > ARP_TIMEOUT_SEC) {
+            arp_table[i].state = ARP_INVALID;
+        }
+    }
+    time_t max = 0;
+    int idx = 0;
+    for (int i = 0; i < ARP_MAX_ENTRY; ++i) {
+        if (arp_table[i].state = ARP_INVALID) {
+            memcpy(arp_table[i].ip, ip, 4);
+            memcpy(arp_table[i].mac, mac, 6);
+            arp_table[i].timeout = 0;
+            arp_table[i].state = ARP_VALID;
+            return ;
+        }
+        if (arp_table[i].timeout > max) {
+            max = arp_table[i].timeout;
+            idx = i;
+        }
+    }
+    memcpy(arp_table[idx].ip, ip, 4);
+    memcpy(arp_table[idx].mac, mac, 6);
+    arp_table[idx].timeout = 0;
+    arp_table[idx].state = ARP_VALID;
 }
 
 /**
@@ -77,7 +101,8 @@ static void arp_req(uint8_t *target_ip)
     arp_pkt_t pkt = arp_init_pkt;
     memcpy(pkt.target_ip, target_ip, 4);
     pkt.opcode = ARP_REQUEST;
-    memcpy(txbuf.data+NET_MAC_LEN*2+2, &pkt, sizeof(arp_pkt_t));
+    buf_init(&txbuf, 46);
+    memcpy(txbuf.data, &pkt, sizeof(arp_pkt_t));
     ethernet_out(&txbuf, bmac, NET_PROTOCOL_ARP);
 }
 
@@ -106,7 +131,20 @@ void arp_in(buf_t *buf)
     if (arp->hw_len != NET_MAC_LEN || arp->hw_type != swap16(ARP_HW_ETHER) || arp->pro_type != swap16(NET_PROTOCOL_IP) || arp->pro_len != NET_IP_LEN || (arp->opcode != ARP_REQUEST && arp->opcode != ARP_REPLY)) {
         return ;
     }
-    arp_update()
+    arp_update(arp->sender_ip, arp->sender_mac, ARP_VALID);
+    if (arp_buf.valid) {
+        ethernet_out(arp_buf.buf, arp->sender_mac, NET_PROTOCOL_IP);
+    } else {
+        if (arp->opcode == ARP_REQUEST && arp->target_ip == DRIVER_IF_IP) {
+            buf_init(&rxbuf, sizeof(arp_pkt_t));
+            arp_pkt_t arpkt = arp_init_pkt;
+            arpkt.opcode = ARP_REPLY;
+            memcpy(arpkt.target_ip, arp->target_ip, 4);
+            memcpy(arpkt.target_mac, arp->target_mac, 6);
+            memcpy(rxbuf.data, &arpkt, sizeof(arp_pkt_t));
+            ethernet_out(rxbuf.data, arp->target_mac, NET_PROTOCOL_IP);
+        }
+    }
 }
 
 /**
