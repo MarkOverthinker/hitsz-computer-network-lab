@@ -126,14 +126,19 @@ static void arp_req(uint8_t *target_ip)
 void arp_in(buf_t *buf)
 {
     // TODO
-    buf_remove_header(buf, NET_MAC_LEN*2+2);
+    // buf_remove_header(buf, NET_MAC_LEN*2+2);
     arp_pkt_t *arp = (arp_pkt_t *)buf->data;
     if (arp->hw_len != NET_MAC_LEN || arp->hw_type != swap16(ARP_HW_ETHER) || arp->pro_type != swap16(NET_PROTOCOL_IP) || arp->pro_len != NET_IP_LEN || (arp->opcode != ARP_REQUEST && arp->opcode != ARP_REPLY)) {
         return ;
     }
     arp_update(arp->sender_ip, arp->sender_mac, ARP_VALID);
     if (arp_buf.valid) {
-        ethernet_out(&(arp_buf.buf), arp->sender_mac, NET_PROTOCOL_IP);
+        for (int i = 0; i < ARP_MAX_ENTRY; ++i) {
+            uint8_t *mac = arp_lookup(arp->sender_ip);
+            if (mac) {
+                ethernet_out(&arp_buf.buf, mac, NET_PROTOCOL_IP);
+            }
+        }
     } else {
         uint8_t tmpip[NET_IP_LEN] = DRIVER_IF_IP;
         if (arp->opcode == ARP_REQUEST && memcmp(arp->target_ip, tmpip, NET_IP_LEN) == 0) {
@@ -169,7 +174,7 @@ void arp_out(buf_t *buf, uint8_t *ip, net_protocol_t protocol)
     }
     arp_buf.buf = *buf;
     arp_buf.valid = 1;
-    arp_buf.protocol = protocol;
+    arp_buf.protocol = swap16(protocol);
     arp_req(ip);
 }
 
